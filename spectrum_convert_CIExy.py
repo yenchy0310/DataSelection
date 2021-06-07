@@ -7,7 +7,7 @@ from scipy import interpolate
 def _smoothSpectrum(wave_intensity):
     
     # smooth raw data
-    wave = [410, 440, 470, 510, 550, 583, 620, 670]
+    wave = [410, 470, 510, 550, 583, 670]
     func = interpolate.interp1d(wave, wave_intensity, kind='cubic')
     new_wave = np.arange(410, 671, 1)
     new_wave_intensity = func(new_wave)
@@ -40,8 +40,8 @@ def convert_CIExy(data):
     for _, series in data.iterrows():
         # smooth raw data
         # normalization
-        wave_intensity_1 = series[['410nm #1', '440nm #1', '470nm #1', '510nm #1', '550nm #1', '583nm #1', '620nm #1', '670nm #1']]/65535 
-        wave_intensity_2 = series[['410nm #2', '440nm #2', '470nm #2', '510nm #2', '550nm #2', '583nm #2', '620nm #2', '670nm #2']]/65535 
+        wave_intensity_1 = series[['410nm #1', '470nm #1', '510nm #1', '550nm #1', '583nm #1', '670nm #1']]/65535 
+        wave_intensity_2 = series[['410nm #2', '470nm #2', '510nm #2', '550nm #2', '583nm #2', '670nm #2']]/65535 
        
         # create a dictionary key:wavelength value:raw data
         sample_sd_data_1 = _smoothSpectrum(wave_intensity_1)

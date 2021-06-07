@@ -1,7 +1,3 @@
-1. add CIEx,y and Lab convert
-2. add save mapping figure
-
-
 ## 更新事項
 >2021.1.18
  * 修正一次可切不同顆sensor
