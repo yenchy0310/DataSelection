@@ -31,9 +31,20 @@ class select_data_7341():
         self.threshold = threshold
         self.convert = convert
         self.data = pd.read_csv(self.data_path).reset_index(drop=True)
+        self.moving_average_list = ['410nm #1', '440nm #1', '470nm #1', 
+                                    '510nm #1', '550nm #1', '583nm #1', 
+                                    '620nm #1', '670nm #1', '900nm #1',
+
+                                    '410nm #2', '440nm #2', '470nm #2', 
+                                    '510nm #2', '550nm #2', '583nm #2', 
+                                    '620nm #2', '670nm #2', '900nm #2',
+
+                                    'Temperature', 'Humidity']
         
         # Change columns name
         self.data.rename(columns={'External Temp':'Temperature', 'External Humidity':'Humidity'}, inplace=True)
+        
+        self.header = self.data.columns
         
         if(remove_spike_switch == True):
             self.data = remove_spike(self.data, plot_channel[0], self.threshold).reset_index(drop=True)
@@ -42,8 +53,12 @@ class select_data_7341():
         if self.convert == True:
             self.data = convert_CIExy(self.data)
             
-    
+    def __addPpmColumn(self):
+        '''Adding ppm column by converting MFC1 value'''
+        self.data['ppm'] = self.data['MFC#1']/100*self.MFC1_max_flow_rate/self.total_flow_rate*self.cylinder_concentration
+        return self.data
   
+    
     def select_data_A(self, select_range, movingAverage=10):
         '''selected range format
            please set datapoint
@@ -53,24 +68,15 @@ class select_data_7341():
                              '20ppm 30%': 780}'''
         
         self.data = pd.read_csv(self.data_path).reset_index(drop=True)
+    
+        for i in self.moving_average_list:
+            if i in self.header:
+                self.data['{}_mv'.format(i)] = self.data[i].rolling(window=movingAverage).mean()
+            else:
+                continue
 
-        # Moving average 
-        moving_average_list = ['410nm #1', '440nm #1', '470nm #1', 
-                            '510nm #1', '550nm #1', '583nm #1', 
-                            '620nm #1', '670nm #1', '900nm #1',
-
-                            '410nm #2', '440nm #2', '470nm #2', 
-                            '510nm #2', '550nm #2', '583nm #2', 
-                            '620nm #2', '670nm #2', '900nm #2',
-
-                            'Temperature', 'Humidity']
-        
-        for i in moving_average_list:
-            self.data['{}_mv'.format(i)] = self.data[i].rolling(window=movingAverage).mean()
-
-        # Adding ppm column
-        # filling ppm value manually (MFC system hasn't been integrated into the MP software)
-        self.data['ppm'] = self.data['MFC#1']/100*self.MFC1_max_flow_rate/self.total_flow_rate*self.cylinder_concentration
+        #Adding ppm column          
+        self.data = self.__addPpmColumn()
 
         # selected data
         df_list=[]    
@@ -82,8 +88,6 @@ class select_data_7341():
         self.df_select_data = pd.concat(df_list).reset_index(drop=True)
         print('Select data shape:', self.df_select_data.shape)
         
-        # ppm column conver to int64 type
-        # self.df_select_data['ppm'] = self.df_select_data['ppm'].astype('int64')
         
     def select_data_B(self, select_range, movingAverage=10):
         '''selected range format
@@ -93,23 +97,14 @@ class select_data_7341():
         
         self.data = pd.read_csv(self.data_path).reset_index(drop=True)
 
-        # Moving average 
-        moving_average_list = ['410nm #1', '440nm #1', '470nm #1', 
-                            '510nm #1', '550nm #1', '583nm #1', 
-                            '620nm #1', '670nm #1', '900nm #1',
+        for i in self.moving_average_list:
+                    if i in self.header:
+                        self.data['{}_mv'.format(i)] = self.data[i].rolling(window=movingAverage).mean()
+                    else:
+                        continue
 
-                            '410nm #2', '440nm #2', '470nm #2', 
-                            '510nm #2', '550nm #2', '583nm #2', 
-                            '620nm #2', '670nm #2', '900nm #2',
-
-                            'Temperature', 'Humidity']
-        
-        for i in moving_average_list:
-            self.data['{}_mv'.format(i)] = self.data[i].rolling(window=movingAverage).mean()
-
-        # Adding ppm column
-        # filling ppm value manually (MFC system hasn't been integrated into the MP software)
-        self.data['ppm'] = self.data['MFC#1']/100*self.MFC1_max_flow_rate/self.total_flow_rate*self.cylinder_concentration
+        # Adding ppm column        
+        self.data = self.__addPpmColumn()
 
         # selected data
         df_list=[]    
@@ -120,8 +115,7 @@ class select_data_7341():
         # concate selected data
         self.df_select_data = pd.concat(df_list).reset_index(drop=True)
         print('Select data shape:', self.df_select_data.shape)
-        # ppm column conver to int64 type
-        # self.df_select_data['ppm'] = self.df_select_data['ppm'].astype('int64')
+        
         
     def select_data_C(self, select_range, movingAverage=10):        
         '''selected range format
@@ -131,36 +125,15 @@ class select_data_7341():
                              'region 3': (1200, 100),
                              'region 4': (1500, 100),}'''
         
-#         self.data = pd.read_csv(self.data_path).reset_index(drop=True)
-
-        # Moving average 
-        moving_average_list = ['410nm #1', '470nm #1', 
-                               '510nm #1', '550nm #1', 
-                               '583nm #1', '670nm #1',
-
-                               '410nm #2', '470nm #2', 
-                               '510nm #2', '550nm #2', 
-                               '583nm #2', '670nm #2', 
-
-                               'Temperature', 'Humidity']
-        
-#         moving_average_list = ['410nm #1', '440nm #1', '470nm #1', 
-#                             '510nm #1', '550nm #1', '583nm #1', 
-#                             '620nm #1', '670nm #1', '900nm #1',
-
-#                             '410nm #2', '440nm #2', '470nm #2', 
-#                             '510nm #2', '550nm #2', '583nm #2', 
-#                             '620nm #2', '670nm #2', '900nm #2',
-
-#                             'Temperature', 'Humidity']
-
-        
-        for i in moving_average_list:
-            self.data['{}_mv'.format(i)] = self.data[i].rolling(window=movingAverage).mean()
+            
+        for i in self.moving_average_list:
+            if i in self.header:
+                self.data['{}_mv'.format(i)] = self.data[i].rolling(window=movingAverage).mean()
+            else:
+                continue
 
         # Adding ppm column
-        # filling ppm value manually (MFC system hasn't been integrated into the MP software)
-        self.data['ppm'] = self.data['MFC#1']/100*self.MFC1_max_flow_rate/self.total_flow_rate*self.cylinder_concentration
+        self.data = self.__addPpmColumn()
 
         # selected data
         df_list=[]    
@@ -172,8 +145,6 @@ class select_data_7341():
         # concate selected data
         self.df_select_data = pd.concat(df_list).reset_index(drop=True)
         print('Select data shape:', self.df_select_data.shape)
-        # ppm column conver to int64 type
-        # self.df_select_data['ppm'] = self.df_select_data['ppm'].astype('int64')
         
     def save_data(self, saveName, select_range):
         # Save select data 
