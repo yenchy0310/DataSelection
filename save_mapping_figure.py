@@ -1,15 +1,21 @@
 import os
 import datetime
+import pandas as pd
 import matplotlib.pyplot as plt
 from mpl_toolkits.axisartist.parasite_axes import HostAxes, ParasiteAxes
 
-def save_mapping_figure(data, data_path, sensor_sn, plot_channel, all_select_range):
+def save_mapping_figure(data_path, sensor_sn, plot_channel, all_select_range):
+    '''data: dataframe
+       data_path: str
+       sensor_sn: str
+       plot_channel: list
+       all_select_range: dictionary'''
+    data = pd.read_csv(data_path)
     
     #create mapping data
-    mapping = [None]*data.shape[0]
-    for b, datapoint in all_select_range.values():
-        mapping[b-datapoint:b] = data[plot_channel][b-datapoint:b]
-        
+    mapping = [None]*data.shape[0]   
+    for index, datapoint in all_select_range.values():
+        mapping[index-datapoint:index] = data[plot_channel[0]][index-datapoint:index]   
     fig = plt.figure(figsize=(15,5))
     #加圖層
     host = HostAxes(fig, [0.15, 0.1, 0.65, 0.8])
@@ -28,7 +34,7 @@ def save_mapping_figure(data, data_path, sensor_sn, plot_channel, all_select_ran
     #匯入數據調整顏色
     fig.add_axes(host)
     x_data = [k for k in range(0, data.shape[0])]
-    p1, = host.plot(x_data, data[plot_channel], label=plot_channel, color='green', alpha=0.7)
+    p1, = host.plot(x_data, data[plot_channel], label=plot_channel[0], color='green', alpha=0.7)
     p2, = host.plot(x_data, mapping, label='mapping', color='orange')
     p3, = par1.plot(x_data, data['External Temp'], label="Temperature", color='red', alpha=0.7)
     p4, = par2.plot(x_data, data['External Humidity'], label="Humidity", color='blue', alpha=0.7)

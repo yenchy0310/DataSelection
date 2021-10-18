@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from spectrum_convert_CIExy import convert_CIExy
 from remove_spike import remove_spike
+from One_Dimension_Kalman_Filter import *
 
 import plotly.graph_objects as go
 # import plotly.offline as offline
@@ -16,7 +17,7 @@ warnings.filterwarnings('ignore')
 import json
 
 class select_data_7341():
-    def __init__(self, data_path, sensor_sn, plot_channel , MFC1_max_flow_rate, total_flow_rate, cylinder_concentration, threshold=2000, datapoint=50, convert=True, remove_spike_switch= True):
+    def __init__(self, data_path, sensor_sn, plot_channel , MFC1_max_flow_rate, total_flow_rate, cylinder_concentration, datapoint=50, convert=True, data_filtered= True):
         '''convert : boolean,  default: True
            spectrum convert to CIEx, CIEy on CIE1931 and Lab'''
         
@@ -27,8 +28,7 @@ class select_data_7341():
         self.MFC1_max_flow_rate = MFC1_max_flow_rate
         self.total_flow_rate = total_flow_rate
         self.cylinder_concentration = cylinder_concentration
-        self.remove_spike_switch= remove_spike_switch
-        self.threshold = threshold
+        self.data_filtered = data_filtered
         self.convert = convert
         self.data = pd.read_csv(self.data_path).reset_index(drop=True)
         self.moving_average_list = ['410nm #1', '440nm #1', '470nm #1', 
@@ -46,9 +46,34 @@ class select_data_7341():
         
         self.header = self.data.columns
         
-        if(remove_spike_switch == True):
-            self.data = remove_spike(self.data, plot_channel[0], self.threshold).reset_index(drop=True)
-        
+        # Implement Kalman filter to each channel    
+        if data_filtered == True:
+            channel = [
+    #                    '410nm #1', '440nm #1',
+                       '470nm #1',
+                       '510nm #1', '550nm #1', '583nm #1',
+                       '620nm #1', '670nm #1',
+    #                    '900nm #1'
+                      ]
+
+            for wavelength in channel:
+                label = 'Filtered_' + wavelength 
+                filter_data=[]
+                process_std=.12
+                process_model = gaussian(0., process_std)
+                AMS_std = 1.8
+
+                x=gaussian(10000, 3000) ## Initial state guess
+                data = np.array(self.data[wavelength])
+                test=One_Dimension_Filter(data, wavelength)
+
+                for signal in test.data:
+                    prior=test.predict(x, process_model)
+                    x=test.update(prior, gaussian(signal, AMS_std))
+
+                    filter_data.append(x.mean)
+                self.data[label] = pd.Series(filter_data)
+
         # convert CIExy
         if self.convert == True:
             self.data = convert_CIExy(self.data)
@@ -98,10 +123,10 @@ class select_data_7341():
         self.data = pd.read_csv(self.data_path).reset_index(drop=True)
 
         for i in self.moving_average_list:
-                    if i in self.header:
-                        self.data['{}_mv'.format(i)] = self.data[i].rolling(window=movingAverage).mean()
-                    else:
-                        continue
+            if i in self.header:
+                self.data['{}_mv'.format(i)] = self.data[i].rolling(window=movingAverage).mean()
+            else:
+                continue
 
         # Adding ppm column        
         self.data = self.__addPpmColumn()

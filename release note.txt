@@ -1,4 +1,5 @@
 ## 更新事項
->2021.1.18
- * 修正一次可切不同顆sensor
- * mapping figure檔名增加timestamp
+
+2021.9.22
+1. auto_select_data
+2. add Kalman filter
